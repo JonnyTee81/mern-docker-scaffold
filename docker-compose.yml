@@ -1,0 +1,66 @@
+version: '3.7'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    image: webapp-server-image
+    container_name: webapp-node-server
+    command: /usr/src/app/node_modules/.bin/nodemon index.js
+    volumes:
+      - ./server/:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - ${SERVER_PORT}:${SERVER_PORT}
+    depends_on:
+      - db
+    env_file: ./.env
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - PORT=${SERVER_PORT}
+      - NODE_ENV=development
+    networks:
+      - app-network
+    restart: always
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    image: webapp-client-image
+    container_name: webapp-react-client
+    command: npm start
+    volumes:
+      - ./client:/usr/src/app/client
+      - /usr/src/app/client/node_modules
+    depends_on:
+      - server
+    ports:
+      - ${CLIENT_PORT}:${CLIENT_PORT}
+    environment:
+      - PORT=${CLIENT_PORT}
+    networks:
+      - app-network
+    restart: always
+
+  db:
+    image: mongo:latest
+    container_name: webapp-mongoDB
+    volumes:
+      - data-volume:/data/db
+    ports:
+      - ${MONGO_PORT}:${MONGO_PORT}
+    networks:
+      - app-network
+    restart: always
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  data-volume:
+  node_modules:
+  web-root:
+    driver: local
